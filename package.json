@@ -1,0 +1,25 @@
+{
+  "name": "employee-sql-tracker",
+  "version": "1.0.0",
+  "description": "GIVEN a command-line application that accepts user input",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Concord511/Employee-SQL-Tracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Concord511/Employee-SQL-Tracker/issues"
+  },
+  "homepage": "https://github.com/Concord511/Employee-SQL-Tracker#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^8.2.0",
+    "mysql2": "^2.3.3-rc.0"
+  }
+}
