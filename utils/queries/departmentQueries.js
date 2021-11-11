@@ -38,12 +38,12 @@ let deleteDepartment = function(id) {
     return new Promise((resolve, reject) => {
         db.query(sql, id, (err, result) => {
             if (err) {
-                reject({ error: err.message });
+                reject({ message: err.message });
             }
             resolve({
                 message: 'Successfully deleted department',
                 changes: result.affectedRows,
-                id: params.id
+                id: id
             });
         });
     });

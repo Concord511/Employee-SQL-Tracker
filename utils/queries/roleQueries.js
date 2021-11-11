@@ -2,7 +2,9 @@ const db = require('../../db/connections');
 
 // Query and return roles table
 let queryRoles = function() {
-    const sql = `SELECT * FROM roles`;
+    const sql = `SELECT roles.id, roles.title, roles.salary, departments.name
+                 FROM roles
+                 INNER JOIN departments ON roles.department_id = departments.id`;
 
     return new Promise((resolve, reject) => {
         db.query(sql, (err, rows) => {
@@ -25,14 +27,33 @@ let addRole = function(title, salary, departmentId) {
                 reject({ error: err.message });
             }
             resolve({
-                message: 'Successfully added role',
+                message: '\nSuccessfully added role\n',
                 data: result
             });
         });
     });
 };
 
+// DELETE role from roles table
+let deleteRole = function(id) {
+    const sql = `DELETE FROM roles WHERE id = ?`;
+
+    return new Promise((resolve, reject) => {
+        db.query(sql, id, (err, result) => {
+            if (err) {
+                reject({ error: err.message });
+            }
+            resolve({
+                message: '\nSuccessfully deleted role\n',
+                changes: result.affectedRows,
+                id: params.id
+            });
+        });
+    });
+}
+
 module.exports = {
     queryRoles,
-    addRole
+    addRole,
+    deleteRole
 }

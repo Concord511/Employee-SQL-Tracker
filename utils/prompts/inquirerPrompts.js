@@ -2,7 +2,7 @@ const inquirer = require('inquirer');
 const cTable = require('console.table');
 const { queryDepartments, addDepartment, deleteDepartment } = require('../queries/departmentQueries');
 const { queryRoles, addRole, deleteRole } = require('../queries/roleQueries');
-const { queryEmployees, addEmployee, deleteEmployee } = require('../queries/employeeQueries');
+const { queryEmployees, addEmployee, updateEmployeeRole, updateEmployeeManager, deleteEmployee } = require('../queries/employeeQueries');
 
 let mainMenu = async function() {
     inquirer
@@ -18,7 +18,14 @@ let mainMenu = async function() {
                     "Add a department",
                     "Add a role",
                     "Add an employee",
-                    "Update an employee role"
+                    "Delete a department",
+                    "Delete a role",
+                    "Delete a manager",
+                    "Update an employee role",
+                    "Update an employee manager",
+                    "View employees by manager",
+                    "View employees by department",
+                    "View department budget"
                 ]
             }
         ])
@@ -48,8 +55,29 @@ let mainMenu = async function() {
                 case 'Add an employee':
                     addEmployeePrompt();
                     break;
+                case 'Delete a department':
+                    deleteDepartmentPrompt();
+                    break;
+                case 'Delete a role':
+                    deleteRolePrompt();
+                    break;
+                case 'Delete an employee':
+                    deleteEmployeePrompt();
+                    break;
                 case 'Update an employee role':
                     updateEmployeeRolePrompt();
+                    break;
+                case 'Update an employee manager':
+                    updateEmployeeManagerPrompt();
+                    break;
+                case 'View employees by manager':
+                    viewEmployeesByManager();
+                    break;
+                case 'View employees by department':
+                    viewEmployeesByDepartment();
+                    break;
+                case 'View department budget':
+                    viewDepartmentBudget();
                     break;
             }
         });
@@ -177,15 +205,16 @@ let addEmployeePrompt = function() {
             let lastName = answer.lastName;
             let roles = [];
             let roleIds = [];
-            let managers = [];
-            let managerIds = [];
             let roleData = await queryRoles();
             roleData.forEach(element => {
                 roles.push(element.title);
                 roleIds.push(element.id);
             });
             roles.push("None");
-            roleIds.push(null)
+            roleIds.push(null);
+
+            let managers = [];
+            let managerIds = [];
             let managerData = await queryEmployees();
             managerData.forEach(element => {
                 let fullName = element.first_name + " " + element.last_name;
@@ -221,5 +250,141 @@ let addEmployeePrompt = function() {
                 }); 
         });
 };
+
+// Inquirer prompt to delete department
+let deleteDepartmentPrompt = async function() {
+    let departmentData = await queryDepartments();
+    let departments = [];
+    let departmentIds = [];
+    departmentData.forEach(element => {
+        departments.push(element.name);
+        departmentIds.push(element.id);
+    })
+    inquirer
+        .prompt([
+            {
+                type: "list",
+                name: "department",
+                message: "Which department do you want to delete?",
+                choices: departments
+            }
+        ])
+        .then(async function(answer) {
+            let index = departments.indexOf(answer.department);
+            let id = departmentIds[index];
+            let data = await deleteDepartment(id);
+            console.log(data.message);
+            mainMenu();
+        });
+}
+
+// Inquirer prompt to delete department
+let deleteRolePrompt = function() {
+
+}
+
+// Inquirer prompt to delete department
+let deleteEmployeePrompt = function() {
+
+}
+
+// Inquirer prompt to update employee role
+let updateEmployeeRolePrompt = async function() {
+    
+    let employees = [];
+    let employeeIds = [];
+    let employeeData = await queryEmployees();
+    employeeData.forEach(element => {
+        let fullName = element.first_name + " " + element.last_name;
+        employees.push(fullName);
+        employeeIds.push(element.id);
+    });
+
+    let roles = [];
+    let roleIds = [];
+    let roleData = await queryRoles();
+    roleData.forEach(element => {
+        roles.push(element.title);
+        roleIds.push(element.id);
+    });
+
+    inquirer
+        .prompt([
+            {
+                type: "list",
+                name: "employee",
+                message: "Which employee's role would you like to change?",
+                choices: employees
+            },
+            {
+                type: "list",
+                name: "role",
+                message: "What new role will they have?",
+                choices: roles
+            }
+        ])
+        .then(async function(answer) {
+            let index = employees.indexOf(answer.employee);
+            let employeeId = employeeIds[index];
+            index = roles.indexOf(answer.role);
+            let roleId = roleIds[index];
+            let data = await updateEmployeeRole(roleId, employeeId);
+                    console.log(data.message);
+                    mainMenu();
+        });
+}
+
+// Inquirer prompt to update employee manager
+let updateEmployeeManagerPrompt = async function() {
+    
+    let employees = [];
+    let employeeIds = [];
+    let employeeData = await queryEmployees();
+    employeeData.forEach(element => {
+        let fullName = element.first_name + " " + element.last_name;
+        employees.push(fullName);
+        employeeIds.push(element.id);
+    });
+
+    inquirer
+        .prompt([
+            {
+                type: "list",
+                name: "employee",
+                message: "Which employee's manager would you like to change?",
+                choices: employees
+            },
+            {
+                type: "list",
+                name: "manager",
+                message: "Who will be their new manager?",
+                choices: employees
+            }
+        ])
+        .then(async function(answer) {
+            let index = employees.indexOf(answer.employee);
+            let employeeId = employeeIds[index];
+            index = employees.indexOf(answer.manager);
+            let managerId = employeeIds[index];
+            let data = await updateEmployeeManager(managerId, employeeId);
+                    console.log(data.message);
+                    mainMenu();
+        });
+}
+
+// Inquirer prompt to view employees by manager
+let viewEmployeesByManager = function() {
+
+}
+
+// Inquirer prompt to view employees by department
+let viewEmployeesByDepartment = function() {
+
+}
+
+// Inquirer prompt to view department budget
+let viewDepartmentBudget = function() {
+
+}
 
 module.exports = mainMenu;
