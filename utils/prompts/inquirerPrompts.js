@@ -1,8 +1,20 @@
 const inquirer = require('inquirer');
+const db = require('../../db/connections');
 const cTable = require('console.table');
-const { queryDepartments, addDepartment, deleteDepartment } = require('../queries/departmentQueries');
-const { queryRoles, addRole, deleteRole } = require('../queries/roleQueries');
-const { queryEmployees, addEmployee, updateEmployeeRole, updateEmployeeManager, deleteEmployee } = require('../queries/employeeQueries');
+const { queryDepartments,
+        addDepartment,
+        deleteDepartment } = require('../queries/departmentQueries');
+const { queryRoles,
+        queryBudget,
+        addRole,
+        deleteRole } = require('../queries/roleQueries');
+const { queryEmployees,
+        queryEmployeesByManager,
+        queryEmployeesByDepartment,
+        addEmployee,
+        updateEmployeeRole,
+        updateEmployeeManager,
+        deleteEmployee } = require('../queries/employeeQueries');
 
 let mainMenu = async function() {
     inquirer
@@ -20,30 +32,46 @@ let mainMenu = async function() {
                     "Add an employee",
                     "Delete a department",
                     "Delete a role",
-                    "Delete a manager",
+                    "Delete an employee",
                     "Update an employee role",
                     "Update an employee manager",
                     "View employees by manager",
                     "View employees by department",
-                    "View department budget"
+                    "View department budget",
+                    "Exit"
                 ]
             }
         ])
-        .then(async function(answer) {
+        .then(async function(answer) {          
             switch (answer.mainMenu) {
                 case 'View all departments':
                     let departmentData = await queryDepartments();
-                    console.table(departmentData);
+                    if (departmentData.length === 0) {
+                        console.log('\nThere are currently no departments\n');
+                    }
+                    else {
+                        console.table(departmentData);
+                    }
                     mainMenu();
                     break;
                 case 'View all roles':
                     let roleData = await queryRoles();
-                    console.table(roleData);
+                    if (roleData.length === 0) {
+                        console.log('\nThere are currently no roles\n');
+                    }
+                    else {
+                        console.table(roleData);
+                    }
                     mainMenu();
                     break;
                 case 'View all employees':
                     let employeeData = await queryEmployees();
-                    console.table(employeeData);
+                    if (employeeData.length === 0) {
+                        console.log('\nThere are currently no employees\n');
+                    }
+                    else {
+                        console.table(employeeData);
+                    }
                     mainMenu();
                     break;
                 case 'Add a department':
@@ -77,8 +105,10 @@ let mainMenu = async function() {
                     viewEmployeesByDepartment();
                     break;
                 case 'View department budget':
-                    viewDepartmentBudget();
+                    viewDepartmentsBudget();
                     break;
+                case 'Exit':
+                    db.end();
             }
         });
 };
@@ -143,14 +173,19 @@ let addRolePrompt = function() {
             let role = answer.roleName;
             let salary = answer.salary;
             let data = await queryDepartments();
-            let departments = [];
-            let departmentIds = [];
-            data.forEach(element => {
-                departments.push(element.name);
-                departmentIds.push(element.id);
-            })
-
-            inquirer
+            if (data.length === 0) {
+                console.log('\n\nMust add department first\n');
+                mainMenu();
+            }
+            else {
+                let departments = [];
+                let departmentIds = [];
+                data.forEach(element => {
+                    departments.push(element.name);
+                    departmentIds.push(element.id);
+                })
+                
+                inquirer
                 .prompt([
                     {
                         type: "list",
@@ -166,6 +201,7 @@ let addRolePrompt = function() {
                     console.log(data.message);
                     mainMenu();
                 });
+            }   
         });
 };
 
@@ -201,6 +237,7 @@ let addEmployeePrompt = function() {
             }
         ])
         .then(async function(answer) {
+            
             let firstName = answer.firstName;
             let lastName = answer.lastName;
             let roles = [];
@@ -254,137 +291,314 @@ let addEmployeePrompt = function() {
 // Inquirer prompt to delete department
 let deleteDepartmentPrompt = async function() {
     let departmentData = await queryDepartments();
-    let departments = [];
-    let departmentIds = [];
-    departmentData.forEach(element => {
-        departments.push(element.name);
-        departmentIds.push(element.id);
-    })
-    inquirer
-        .prompt([
-            {
-                type: "list",
-                name: "department",
-                message: "Which department do you want to delete?",
-                choices: departments
-            }
-        ])
-        .then(async function(answer) {
-            let index = departments.indexOf(answer.department);
-            let id = departmentIds[index];
-            let data = await deleteDepartment(id);
-            console.log(data.message);
-            mainMenu();
-        });
+    if (departmentData.length === 0) {
+        console.log('\n\nNo departments to delete\n');
+        mainMenu();
+    }
+    else {
+        let departments = [];
+        let departmentIds = [];
+        departmentData.forEach(element => {
+            departments.push(element.name);
+            departmentIds.push(element.id);
+        })
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "department",
+                    message: "Which department do you want to delete?",
+                    choices: departments
+                }
+            ])
+            .then(async function(answer) {
+                let index = departments.indexOf(answer.department);
+                let id = departmentIds[index];
+                let data = await deleteDepartment(id);
+                console.log(data.message);
+                mainMenu();            
+            });
+    }
 }
 
 // Inquirer prompt to delete department
-let deleteRolePrompt = function() {
-
-}
-
-// Inquirer prompt to delete department
-let deleteEmployeePrompt = function() {
-
-}
-
-// Inquirer prompt to update employee role
-let updateEmployeeRolePrompt = async function() {
-    
-    let employees = [];
-    let employeeIds = [];
-    let employeeData = await queryEmployees();
-    employeeData.forEach(element => {
-        let fullName = element.first_name + " " + element.last_name;
-        employees.push(fullName);
-        employeeIds.push(element.id);
-    });
-
-    let roles = [];
-    let roleIds = [];
+let deleteRolePrompt = async function() {
     let roleData = await queryRoles();
-    roleData.forEach(element => {
-        roles.push(element.title);
-        roleIds.push(element.id);
-    });
-
-    inquirer
+    if (roleData.length === 0) {
+        console.log('\n\nNo roles to delete\n');
+        mainMenu();
+    }
+    else {
+        let roles = [];
+        let roleIds = [];
+        roleData.forEach(element => {
+            roles.push(element.title);
+            roleIds.push(element.id);
+        })
+        inquirer
         .prompt([
-            {
-                type: "list",
-                name: "employee",
-                message: "Which employee's role would you like to change?",
-                choices: employees
-            },
             {
                 type: "list",
                 name: "role",
-                message: "What new role will they have?",
+                message: "Which role do you want to delete?",
                 choices: roles
             }
         ])
         .then(async function(answer) {
-            let index = employees.indexOf(answer.employee);
-            let employeeId = employeeIds[index];
-            index = roles.indexOf(answer.role);
-            let roleId = roleIds[index];
-            let data = await updateEmployeeRole(roleId, employeeId);
-                    console.log(data.message);
-                    mainMenu();
+            let index = roles.indexOf(answer.role);
+            let id = roleIds[index];
+            let data = await deleteRole(id);
+            console.log(data.message);
+            mainMenu();
         });
+    }
+}
+
+// Inquirer prompt to delete department
+let deleteEmployeePrompt = async function() {
+    let employeeData = await queryEmployees();
+    if (employeeData.length === 0) {
+        console.log('\n\nNo employees to delete\n');
+        mainMenu();
+    }
+    else {
+        let employees = [];
+        let employeeIds = [];
+        employeeData.forEach(element => {
+            let fullName = element.first_name + ' ' + element.last_name;
+            employees.push(fullName);
+            employeeIds.push(element.id);
+        })
+        inquirer
+        .prompt([
+            {
+                type: "list",
+                name: "employee",
+                message: "Which employee do you want to delete?",
+                choices: employees
+            }
+        ])
+        .then(async function(answer) {
+            let index = employees.indexOf(answer.employee);
+            let id = employeeIds[index];
+            let data = await deleteEmployee(id);
+            console.log(data.message);
+            mainMenu();
+        });
+    }
+}
+    
+// Inquirer prompt to update employee role
+let updateEmployeeRolePrompt = async function() {
+    let employeeData = await queryEmployees();
+    let roleData = await queryRoles();
+    if (employeeData.length === 0) {
+        console.log('\n\nPlease add an employee before updating\n');
+        mainMenu();
+    }
+    else if (roleData.length === 0) {
+        console.log('\n\nPlease add a role before updating\n');
+        mainMenu();
+    }
+    else {
+        let employees = [];
+        let employeeIds = [];
+        employeeData.forEach(element => {
+            let fullName = element.first_name + " " + element.last_name;
+            employees.push(fullName);
+            employeeIds.push(element.id);
+        });
+        let roles = [];
+        let roleIds = [];
+        roleData.forEach(element => {
+            roles.push(element.title);
+            roleIds.push(element.id);
+        });
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "employee",
+                    message: "Which employee's role would you like to change?",
+                    choices: employees
+                },
+                {
+                    type: "list",
+                    name: "role",
+                    message: "What new role will they have?",
+                    choices: roles
+                }
+            ])
+            .then(async function(answer) {
+                let index = employees.indexOf(answer.employee);
+                let employeeId = employeeIds[index];
+                index = roles.indexOf(answer.role);
+                let roleId = roleIds[index];
+                let data = await updateEmployeeRole(roleId, employeeId);
+                console.log(data.message);
+                mainMenu();
+            });
+    }
 }
 
 // Inquirer prompt to update employee manager
 let updateEmployeeManagerPrompt = async function() {
     
-    let employees = [];
-    let employeeIds = [];
     let employeeData = await queryEmployees();
-    employeeData.forEach(element => {
-        let fullName = element.first_name + " " + element.last_name;
-        employees.push(fullName);
-        employeeIds.push(element.id);
-    });
-
-    inquirer
-        .prompt([
-            {
-                type: "list",
-                name: "employee",
-                message: "Which employee's manager would you like to change?",
-                choices: employees
-            },
-            {
-                type: "list",
-                name: "manager",
-                message: "Who will be their new manager?",
-                choices: employees
-            }
-        ])
-        .then(async function(answer) {
-            let index = employees.indexOf(answer.employee);
-            let employeeId = employeeIds[index];
-            index = employees.indexOf(answer.manager);
-            let managerId = employeeIds[index];
-            let data = await updateEmployeeManager(managerId, employeeId);
-                    console.log(data.message);
-                    mainMenu();
+    if (employeeData.length === 0) {
+        console.log('\n\nPlease add an employee before updating\n');
+        mainMenu();
+    }
+    else {
+        let employees = [];
+        let employeeIds = [];
+        employeeData.forEach(element => {
+            let fullName = element.first_name + " " + element.last_name;
+            employees.push(fullName);
+            employeeIds.push(element.id);
         });
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "employee",
+                    message: "Which employee's manager would you like to change?",
+                    choices: employees
+                },
+                {
+                    type: "list",
+                    name: "manager",
+                    message: "Who will be their new manager?",
+                    choices: employees
+                }
+            ])
+            .then(async function(answer) {
+                let index = employees.indexOf(answer.employee);
+                let employeeId = employeeIds[index];
+                index = employees.indexOf(answer.manager);
+                let managerId = employeeIds[index];
+                let data = await updateEmployeeManager(managerId, employeeId);
+                console.log(data.message);
+                mainMenu();
+            });
+    }
 }
 
 // Inquirer prompt to view employees by manager
-let viewEmployeesByManager = function() {
-
+let viewEmployeesByManager = async function() {
+    let employeeData = await queryEmployees();
+    if (employeeData.length === 0) {
+        console.log('\n\nNo managers to sort by\n');
+        mainMenu();
+    }
+    else {
+        let employees = [];
+        let employeeIds = [];
+        employeeData.forEach(element => {
+            let fullName = element.first_name + ' ' + element.last_name;
+            employees.push(fullName);
+            employeeIds.push(element.id);
+        })
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "employee",
+                    message: "Which manager do you want to view employees by?",
+                    choices: employees
+                }
+            ])
+            .then(async function(answer) {
+                let index = employees.indexOf(answer.employee);
+                let id = employeeIds[index];
+                let data = await queryEmployeesByManager(id);
+                if (data.length === 0) {
+                    console.log(`\n${answer.employee} is no one's manager\n`);
+                }
+                else {
+                    console.table(data);
+                }
+                mainMenu();
+            });
+    }
 }
 
 // Inquirer prompt to view employees by department
-let viewEmployeesByDepartment = function() {
-
+let viewEmployeesByDepartment = async function() {
+    let departmentData = await queryDepartments();
+    if (departmentData.length === 0) {
+        console.log('\n\nNo departments to sort by\n');
+        mainMenu();
+    }
+    else {
+        let departments = [];
+        let departmentIds = [];
+        departmentData.forEach(element => {
+            departments.push(element.name);
+            departmentIds.push(element.id);
+        })
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "department",
+                    message: "Which department do you want to view employees by?",
+                    choices: departments
+                }
+            ])
+            .then(async function(answer) {
+                let index = departments.indexOf(answer.department);
+                let id = departmentIds[index];
+                let data = await queryEmployeesByDepartment(id);
+                if (data.length === 0) {
+                    console.log(`\n${answer.department} has no employees\n`);
+                }
+                else {
+                    console.table(data);
+                }
+                mainMenu();
+            });
+    }
 }
 
 // Inquirer prompt to view department budget
-let viewDepartmentBudget = function() {
-
+let viewDepartmentsBudget = async function() {
+    let departmentData = await queryDepartments();
+    if (departmentData.length === 0) {
+        console.log('\n\nNo departments to view budget for\n');
+        mainMenu();
+    }
+    else {
+        let departments = [];
+        let departmentIds = [];
+        departmentData.forEach(element => {
+            departments.push(element.name);
+            departmentIds.push(element.id);
+        })
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    name: "department",
+                    message: "Which department do you want to view the budget for?",
+                    choices: departments
+                }
+            ])
+            .then(async function(answer) {
+                let index = departments.indexOf(answer.department);
+                let id = departmentIds[index];
+                let data = await queryBudget(id);
+                if (data.length === 0) {
+                    console.log(`\n${answer.department} has no employees\n`);
+                }
+                else {
+                    console.table(data);
+                }
+                mainMenu();
+            });
+    }
 }
 
 module.exports = mainMenu;

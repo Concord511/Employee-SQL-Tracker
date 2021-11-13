@@ -24,7 +24,7 @@ let addDepartment = function(params) {
                 reject({ error: err.message });
             }
             resolve({
-                    message: 'Successfully added department',
+                    message: '\nSuccessfully added department\n',
                     data: result    
             });
         });
@@ -41,7 +41,7 @@ let deleteDepartment = function(id) {
                 reject({ message: err.message });
             }
             resolve({
-                message: 'Successfully deleted department',
+                message: '\nSuccessfully deleted department\n',
                 changes: result.affectedRows,
                 id: id
             });

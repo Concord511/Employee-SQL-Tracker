@@ -16,6 +16,20 @@ let queryRoles = function() {
     })
 };
 
+// Query budget by department
+let queryBudget = function(departmentId) {
+    const sql = `SELECT SUM(salary) FROM roles WHERE department_id = ?`;
+
+    return new Promise((resolve, reject) => {
+        db.query(sql, departmentId, (err, rows) => {
+            if (err) {
+                reject({ message: err.message });
+            }
+            resolve(rows);
+        });
+    })
+};
+
 // INSERTS role into roles table
 let addRole = function(title, salary, departmentId) {
     const sql = `INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)`;
@@ -37,7 +51,6 @@ let addRole = function(title, salary, departmentId) {
 // DELETE role from roles table
 let deleteRole = function(id) {
     const sql = `DELETE FROM roles WHERE id = ?`;
-
     return new Promise((resolve, reject) => {
         db.query(sql, id, (err, result) => {
             if (err) {
@@ -46,7 +59,7 @@ let deleteRole = function(id) {
             resolve({
                 message: '\nSuccessfully deleted role\n',
                 changes: result.affectedRows,
-                id: params.id
+                id: id
             });
         });
     });
@@ -54,6 +67,7 @@ let deleteRole = function(id) {
 
 module.exports = {
     queryRoles,
+    queryBudget,
     addRole,
     deleteRole
 }

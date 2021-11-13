@@ -24,6 +24,56 @@ let queryEmployees = function() {
     })
 };
 
+// Query employees by Manager
+let queryEmployeesByManager = function(managerId) {
+    const sql = `SELECT employees.id,
+                        employees.first_name,
+                        employees.last_name,
+                        roles.title,
+                        departments.name AS department,
+                        roles. salary,
+                        CONCAT(m.first_name, ' ', m.last_name) AS manager
+                FROM employees
+                LEFT JOIN roles ON employees.role_id = roles.id
+                LEFT JOIN departments ON roles.department_id = departments.id
+                LEFT JOIN employees m ON employees.manager_id = m.id
+                WHERE employees.manager_id = ?`;
+
+    return new Promise((resolve, reject) => {
+        db.query(sql, managerId, (err, rows) => {
+            if (err) {
+                reject({ message: err.message });
+            }
+            resolve(rows);
+        });
+    })
+};
+
+// Query employees by department
+let queryEmployeesByDepartment = function(departmentId) {
+    const sql = `SELECT employees.id,
+                        employees.first_name,
+                        employees.last_name,
+                        roles.title,
+                        departments.name AS department,
+                        roles. salary,
+                        CONCAT(m.first_name, ' ', m.last_name) AS manager
+                FROM employees
+                LEFT JOIN roles ON employees.role_id = roles.id
+                LEFT JOIN departments ON roles.department_id = departments.id
+                LEFT JOIN employees m ON employees.manager_id = m.id
+                WHERE departments.id = ?`;
+
+    return new Promise((resolve, reject) => {
+        db.query(sql, departmentId, (err, rows) => {
+            if (err) {
+                reject({ message: err.message });
+            }
+            resolve(rows);
+        });
+    })
+};
+
 // INSERT employee into employee table
 let addEmployee = function(firstName, lastName, roleId, managerId) {
     const sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)`;
@@ -108,7 +158,7 @@ let deleteEmployee = function(id) {
             resolve({
                 message: '\nSuccessfully deleted employee\n',
                 changes: result.affectedRows,
-                id: params.id
+                id: id
             });
         });
     });
@@ -116,6 +166,8 @@ let deleteEmployee = function(id) {
 
 module.exports = {
     queryEmployees,
+    queryEmployeesByManager,
+    queryEmployeesByDepartment,
     addEmployee,
     updateEmployeeRole,
     updateEmployeeManager,
