@@ -567,7 +567,7 @@ let viewEmployeesByDepartment = async function() {
 let viewDepartmentsBudget = async function() {
     let departmentData = await queryDepartments();
     if (departmentData.length === 0) {
-        console.log('\n\nNo departments to view budget for\n');
+        console.log('\n\nNo departments to view\n');
         mainMenu();
     }
     else {
@@ -582,7 +582,7 @@ let viewDepartmentsBudget = async function() {
                 {
                     type: "list",
                     name: "department",
-                    message: "Which department do you want to view the budget for?",
+                    message: "Which department do you want to view employees by?",
                     choices: departments
                 }
             ])
